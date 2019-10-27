@@ -8,6 +8,15 @@ Pending Release
 
 .. Insert new release notes below this line
 
+* Converted setuptools metadata to configuration file. This meant removing the
+  ``__version__`` attribute from the package. If you want to inspect the
+  installed version, use
+  ``importlib.metadata.version("pytest-randomly")``
+  (`docs <https://docs.python.org/3.8/library/importlib.metadata.html#distribution-versions>`__ /
+  `backport <https://pypi.org/project/importlib-metadata/>`__).
+* Convert reading entrypoints to use ``importlib.metadata``. Depend on
+  ``importlib-metadata`` on Python < 3.8.
+
 3.1.0 (2019-08-25)
 ------------------
 
