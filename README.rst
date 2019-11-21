@@ -74,7 +74,7 @@ Install from pip with:
 
     pip install pytest-randomly
 
-Python 3.5-3.8 supported.
+Python 3.5 to 3.8 supported.
 
 Pytest will automatically find the plugin and use it when you run ``pytest``.
 The output will start with an extra line that tells you the random seed that is
@@ -121,3 +121,21 @@ altogether, you can use the ``-p`` argument, for example:
 .. code-block:: sh
 
     pytest -p no:randomly
+
+Entry Point
+-----------
+
+If you're using a different randomness generator in your third party package,
+you can register an entrypoint to be called every time ``pytest-randomly``
+reseeds. Implement the entrypoint ``pytest_randomly.random_seeder``, referring
+to a function/callable that takes one argument, the new seed (int).
+
+For example in your ``setup.cfg``:
+
+.. code-block:: sh
+
+    [options.entry_points]
+    pytest_randomly.random_seeder =
+        mypackage = mypackage.reseed
+
+Then implement ``reseed(new_seed)``.
