@@ -2,6 +2,22 @@
 History
 -------
 
+3.3.1 (2020-04-15)
+------------------
+
+* Fix to work when pytest-xdist is not installed or active
+  (``PluginValidationError: unknown hook 'pytest_configure_node'``).
+
+3.3.0 (2020-04-15)
+------------------
+
+* Add `pytest-xdist <https://pypi.org/project/pytest-xdist/>`__ support.
+  Previously it only worked reliably when setting ``--randomly-seed``
+  explicitly. When not provided, the default seed generated in workers could
+  differ and collection would fail. Now when it is not provided, all xdist
+  worker processes shared the same default seed generated in the master
+  process.
+
 3.2.1 (2020-01-13)
 ------------------
 

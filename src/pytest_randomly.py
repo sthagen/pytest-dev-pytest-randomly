@@ -10,6 +10,10 @@ if sys.version_info >= (3, 8):
 else:
     from importlib_metadata import entry_points
 
+try:
+    import xdist
+except ImportError:
+    xdist = None
 
 # factory-boy
 try:
@@ -46,7 +50,7 @@ default_seed = int(time.time())
 
 
 def seed_type(string):
-    if string == "last":
+    if string in ("default", "last"):
         return string
     try:
         return int(string)
@@ -62,7 +66,7 @@ def pytest_addoption(parser):
         "--randomly-seed",
         action="store",
         dest="randomly_seed",
-        default=str(default_seed),
+        default="default",
         type=seed_type,
         help="""Set the seed that pytest-randomly uses (int), or pass the
                 special value 'last' to reuse the seed from the previous run.
@@ -85,6 +89,33 @@ def pytest_addoption(parser):
         default=True,
         help="Stop pytest-randomly from randomly reorganizing the test order.",
     )
+
+
+def pytest_configure(config):
+    if config.pluginmanager.hasplugin("xdist"):
+        config.pluginmanager.register(XdistHooks())
+
+    seed_value = config.getoption("randomly_seed")
+    if seed_value == "last":
+        seed = config.cache.get("randomly_seed", default_seed)
+    elif seed_value == "default":
+        if hasattr(config, "workerinput"):
+            # pytest-xdist: use seed generated on master.
+            seed = config.workerinput["randomly_seed"]
+        else:
+            seed = default_seed
+    else:
+        seed = seed_value
+    config.cache.set("randomly_seed", seed)
+    config.option.randomly_seed = seed
+
+
+class XdistHooks:
+    # Hooks for xdist only, registered when needed in pytest_configure()
+    # https://docs.pytest.org/en/latest/writing_plugins.html#optionally-using-hooks-from-3rd-party-plugins  # noqa: B950
+
+    def pytest_configure_node(self, node):
+        node.workerinput["randomly_seed"] = node.config.getoption("randomly_seed")
 
 
 random_states = {}
@@ -125,13 +156,7 @@ def _reseed(config, offset=0):
 
 
 def pytest_report_header(config):
-    seed_value = config.getoption("randomly_seed")
-    if seed_value == "last":
-        seed = config.cache.get("randomly_seed", default_seed)
-    else:
-        seed = seed_value
-    config.cache.set("randomly_seed", seed)
-    config.option.randomly_seed = seed
+    seed = config.getoption("randomly_seed")
     _reseed(config)
     return "Using --randomly-seed={}".format(seed)
 
@@ -151,7 +176,7 @@ def pytest_runtest_teardown(item):
         _reseed(item.config, 1)
 
 
-def pytest_collection_modifyitems(session, config, items):
+def pytest_collection_modifyitems(config, items):
     if not config.getoption("randomly_reorganize"):
         return
 
