@@ -2,25 +2,27 @@
 pytest-randomly
 ===============
 
-.. image:: https://github.com/pytest-dev/pytest-randomly/workflows/CI/badge.svg?branch=master
+.. image:: https://img.shields.io/github/workflow/status/pytest-dev/pytest-randomly/CI/master?style=for-the-badge
    :target: https://github.com/pytest-dev/pytest-randomly/actions?workflow=CI
 
-.. image:: https://img.shields.io/pypi/v/pytest-randomly.svg
-   :target: https://pypi.python.org/pypi/pytest-randomly
+.. image:: https://img.shields.io/pypi/v/pytest-randomly.svg?style=for-the-badge
+   :target: https://pypi.org/project/pytest-randomly/
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/python/black
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge
+   :target: https://github.com/psf/black
+
+.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white&style=for-the-badge
+   :target: https://github.com/pre-commit/pre-commit
+   :alt: pre-commit
 
 .. figure:: https://raw.githubusercontent.com/pytest-dev/pytest-randomly/master/logo.png
    :scale: 50%
    :alt: Randomness power.
 
-Pytest plugin to randomly order tests and control ``random.seed``. (Also
-available `for nose <https://github.com/adamchainz/nose-randomly>`_).
+Pytest plugin to randomly order tests and control ``random.seed``.
 
---------
 Features
---------
+========
 
 All of these features are on by default but can be disabled with flags.
 
@@ -35,9 +37,12 @@ All of these features are on by default but can be disabled with flags.
   `factory boy <https://factoryboy.readthedocs.io/en/latest/reference.html>`_
   is installed, its random state is reset at the start of every test. This
   allows for repeatable use of its random 'fuzzy' features.
-* If `faker <https://pypi.python.org/pypi/faker>`_ is installed, its random
+* If `faker <https://pypi.org/project/faker>`_ is installed, its random
   state is reset at the start of every test. This is also for repeatable fuzzy
-  data in tests - factory boy uses faker for lots of data.
+  data in tests - factory boy uses faker for lots of data. This is also done
+  if you're using the ``faker`` pytest fixture, by defining the ``faker_seed``
+  fixture
+  (`docs <https://faker.readthedocs.io/en/master/pytest-fixtures.html#seeding-configuration>`__).
 * If `numpy <http://www.numpy.org/>`_ is installed, its random state is reset
   at the start of every test.
 * If additional random generators are used, they can be registered under the
@@ -47,9 +52,8 @@ All of these features are on by default but can be disabled with flags.
   that takes the current seed value.
 * Works with `pytest-xdist <https://pypi.org/project/pytest-xdist/>`__.
 
------
 About
------
+=====
 
 Randomness in testing can be quite powerful to discover hidden flaws in the
 tests themselves, as well as giving a little more coverage to your system.
@@ -58,6 +62,11 @@ By randomly ordering the tests, the risk of surprising inter-test dependencies
 is reduced - a technique used in many places, for example Google's C++ test
 runner `googletest
 <https://code.google.com/p/googletest/wiki/V1_5_AdvancedGuide#Shuffling_the_Tests>`_.
+Research suggests that "dependent tests do exist in practice" and a random
+order of test executions can effectively detect such dependencies [1]_.
+Alternatively, a reverse order of test executions, as provided by `pytest-reverse
+<https://github.com/adamchainz/pytest-reverse>`__, may find less dependent
+tests but can achieve a better benefit/cost ratio.
 
 By resetting the random seed to a repeatable number for each test, tests can
 create data based on random numbers and yet remain repeatable, for example
@@ -65,12 +74,16 @@ factory boy's fuzzy values. This is good for ensuring that tests specify the
 data they need and that the tested system is not affected by any data that is
 filled in randomly due to not being specified.
 
-This plugin is a Pytest port of my plugin for nose, ``nose-randomly``. I've
-written a `blog post on its history <https://adamj.eu/tech/2018/01/08/pytest-randomly-history/>`_.
+I have written a `blog post covering the history of
+pytest-randomly <https://adamj.eu/tech/2018/01/08/pytest-randomly-history/>`__,
+including how it started life the a nose plugin
+`nose-randomly <https://github.com/adamchainz/nose-randomly>`__.
 
------
-Usage
------
+Additionally, I appeared on the Test and Code podcast to `talk about
+pytest-randomly <https://testandcode.com/128>`__.
+
+Installation
+============
 
 Install from pip with:
 
@@ -78,7 +91,17 @@ Install from pip with:
 
     python -m pip install pytest-randomly
 
-Python 3.5 to 3.8 supported.
+Python 3.6 to 3.9 supported.
+
+----
+
+**Testing a Django project?**
+Check out my book `Speed Up Your Django Tests <https://gumroad.com/l/suydt>`__ which covers loads of best practices so you can write faster, more accurate tests.
+
+----
+
+Usage
+=====
 
 Pytest will automatically find the plugin and use it when you run ``pytest``.
 The output will start with an extra line that tells you the random seed that is
@@ -126,9 +149,8 @@ altogether, you can use the ``-p`` argument, for example:
 
     pytest -p no:randomly
 
------------
 Entry Point
------------
+===========
 
 If you're using a different randomness generator in your third party package,
 you can register an entrypoint to be called every time ``pytest-randomly``
@@ -144,3 +166,8 @@ For example in your ``setup.cfg``:
         mypackage = mypackage.reseed
 
 Then implement ``reseed(new_seed)``.
+
+References
+==========
+
+.. [1] Sai Zhang, Darioush Jalali, Jochen Wuttke, Kıvanç Muşlu, Wing Lam, Michael D. Ernst, and David Notkin. 2014. Empirically revisiting the test independence assumption. In Proceedings of the 2014 International Symposium on Software Testing and Analysis (ISSTA 2014). Association for Computing Machinery, New York, NY, USA, 385–396. doi:https://doi.org/10.1145/2610384.2610404

@@ -121,7 +121,7 @@ def test_passing_nonsense_for_randomly_seed(ourtestdir):
     out.stderr.fnmatch_lines(
         [
             (
-                "pytest: error: argument --randomly-seed: 'invalidvalue' "
+                "*: error: argument --randomly-seed: 'invalidvalue' "
                 + "is not an integer or the string 'last'"
             )
         ]
@@ -439,8 +439,8 @@ def test_it_works_with_the_simplest_test_items(ourtestdir):
 
 
         class NoOpItem(pytest.Item):
-            def __init__(self, path, parent, module=None):
-                super(NoOpItem, self).__init__(path, parent)
+            def __init__(self, name, parent, module=None):
+                super(NoOpItem, self).__init__(name=name, parent=parent)
                 if module is not None:
                     self.module = module
 
@@ -451,13 +451,19 @@ def test_it_works_with_the_simplest_test_items(ourtestdir):
         def pytest_collect_file(path, parent):
             if not str(path).endswith('.py'):
                 return
-            return MyCollector(
+            return MyCollector.from_parent(
+                parent=parent,
                 fspath=str(path),
                 items=[
-                NoOpItem(str(path), parent, 'foo'),
-                NoOpItem(str(path), parent),
+                    NoOpItem.from_parent(
+                        name=str(path) + "1",
+                        parent=parent, module="foo"
+                    ),
+                    NoOpItem.from_parent(
+                        name=str(path) + "2",
+                        parent=parent,
+                    ),
                 ],
-                parent=parent,
             )
         """
     )
@@ -593,6 +599,21 @@ def test_faker(ourtestdir):
     out.assert_outcomes(passed=2)
 
 
+def test_faker_fixture(ourtestdir):
+    ourtestdir.makepyfile(
+        test_one="""
+        def test_one(faker):
+            assert faker.name() == 'Ryan Gallagher'
+
+        def test_two(faker):
+            assert faker.name() == 'Ryan Gallagher'
+        """
+    )
+
+    out = ourtestdir.runpytest("--randomly-seed=1")
+    out.assert_outcomes(passed=2)
+
+
 def test_numpy(ourtestdir):
     ourtestdir.makepyfile(
         test_one="""
@@ -608,6 +629,20 @@ def test_numpy(ourtestdir):
 
     out = ourtestdir.runpytest("--randomly-seed=1")
     out.assert_outcomes(passed=2)
+
+
+def test_numpy_doesnt_crash_with_large_seed(ourtestdir):
+    ourtestdir.makepyfile(
+        test_one="""
+        import numpy as np
+
+        def test_one():
+            assert np.random.rand() >= 0.0
+        """
+    )
+
+    out = ourtestdir.runpytest("--randomly-seed=7106521602475165645")
+    out.assert_outcomes(passed=1)
 
 
 def test_failing_import(testdir):

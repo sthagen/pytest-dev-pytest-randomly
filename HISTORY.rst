@@ -1,6 +1,30 @@
--------
+=======
 History
--------
+=======
+
+* Drop Python 3.5 support.
+
+3.5.0 (2020-11-16)
+------------------
+
+* Support Python 3.9.
+* Move license from BSD to MIT License.
+
+3.4.1 (2020-07-10)
+------------------
+
+* Fix numpy error ``ValueError: Seed must be between 0 and 2**32 - 1`` when
+  passed a seed outside of this range.
+
+3.4.0 (2020-05-27)
+------------------
+
+* Provide a ``faker_seed`` fixture to set the seed for tests using faker's
+  pytest fixtures (as per its
+  `docs <https://faker.readthedocs.io/en/master/pytest-fixtures.html#seeding-configuration>`__).
+
+  Thanks to Romain Létendart for the change in `PR #261
+  <https://github.com/pytest-dev/pytest-randomly/pull/261>`__.
 
 3.3.1 (2020-04-15)
 ------------------
