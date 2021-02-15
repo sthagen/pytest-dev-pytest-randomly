@@ -2,7 +2,7 @@
 pytest-randomly
 ===============
 
-.. image:: https://img.shields.io/github/workflow/status/pytest-dev/pytest-randomly/CI/master?style=for-the-badge
+.. image:: https://img.shields.io/github/workflow/status/pytest-dev/pytest-randomly/CI/main?style=for-the-badge
    :target: https://github.com/pytest-dev/pytest-randomly/actions?workflow=CI
 
 .. image:: https://img.shields.io/pypi/v/pytest-randomly.svg?style=for-the-badge
@@ -15,7 +15,7 @@ pytest-randomly
    :target: https://github.com/pre-commit/pre-commit
    :alt: pre-commit
 
-.. figure:: https://raw.githubusercontent.com/pytest-dev/pytest-randomly/master/logo.png
+.. figure:: https://raw.githubusercontent.com/pytest-dev/pytest-randomly/main/logo.png
    :scale: 50%
    :alt: Randomness power.
 
@@ -76,7 +76,7 @@ filled in randomly due to not being specified.
 
 I have written a `blog post covering the history of
 pytest-randomly <https://adamj.eu/tech/2018/01/08/pytest-randomly-history/>`__,
-including how it started life the a nose plugin
+including how it started life as the nose plugin
 `nose-randomly <https://github.com/adamchainz/nose-randomly>`__.
 
 Additionally, I appeared on the Test and Code podcast to `talk about
