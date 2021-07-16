@@ -91,7 +91,7 @@ Install from pip with:
 
     python -m pip install pytest-randomly
 
-Python 3.6 to 3.9 supported.
+Python 3.6 to 3.10 supported.
 
 ----
 
@@ -159,7 +159,7 @@ to a function/callable that takes one argument, the new seed (int).
 
 For example in your ``setup.cfg``:
 
-.. code-block:: sh
+.. code-block:: ini
 
     [options.entry_points]
     pytest_randomly.random_seeder =

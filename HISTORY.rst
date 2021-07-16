@@ -2,6 +2,29 @@
 History
 =======
 
+3.8.0 (2021-05-10)
+------------------
+
+* Support Python 3.10.
+
+3.7.0 (2021-04-11)
+------------------
+
+* Drop dependency on ``backports.entry-points-selectable`` by depending on
+  ``importlib-metadata`` version 3.6.0+.
+
+3.6.0 (2021-04-01)
+------------------
+
+* Fix deprecation warning from importlib-metadata 3.9.0+.
+
+  Thanks to Dominic Davis-Foster for report in `Issue #333
+  <https://github.com/pytest-dev/pytest-randomly/issue/333>`__.
+
+* Stop distributing tests to reduce package size. Tests are not intended to be
+  run outside of the tox setup in the repository. Repackagers can use GitHub's
+  tarballs per tag.
+
 * Drop Python 3.5 support.
 
 3.5.0 (2020-11-16)
