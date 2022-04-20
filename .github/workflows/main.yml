@@ -6,6 +6,10 @@ on:
     - main
   pull_request:
 
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     name: Python ${{ matrix.python-version }}
@@ -14,11 +18,10 @@ jobs:
     strategy:
       matrix:
         python-version:
-        - 3.6
         - 3.7
         - 3.8
         - 3.9
-        - 3.10-dev
+        - '3.10'
 
     steps:
     - uses: actions/checkout@v2
@@ -26,13 +29,8 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements/*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        cache: pip
+        cache-dependency-path: 'requirements/*.txt'
 
     - name: Install dependencies
       run: |
@@ -41,3 +39,41 @@ jobs:
 
     - name: Run tox targets for ${{ matrix.python-version }}
       run: tox --py current
+
+    - name: Upload coverage data
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage-data
+        path: '.coverage.*'
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-20.04
+    needs: tests
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade coverage[toml]
+
+      - name: Download data
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage-data
+
+      - name: Combine coverage and fail if it's <100%
+        run: |
+          python -m coverage combine
+          python -m coverage html --skip-covered --skip-empty
+          python -m coverage report --fail-under=100
+
+      - name: Upload HTML report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: html-report
+          path: htmlcov

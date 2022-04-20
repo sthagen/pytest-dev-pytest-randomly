@@ -5,6 +5,9 @@ pytest-randomly
 .. image:: https://img.shields.io/github/workflow/status/pytest-dev/pytest-randomly/CI/main?style=for-the-badge
    :target: https://github.com/pytest-dev/pytest-randomly/actions?workflow=CI
 
+.. image:: https://img.shields.io/badge/Coverage-100%25-success?style=for-the-badge
+  :target: https://github.com/pytest-dev/pytest-randomly/actions?workflow=CI
+
 .. image:: https://img.shields.io/pypi/v/pytest-randomly.svg?style=for-the-badge
    :target: https://pypi.org/project/pytest-randomly/
 
@@ -29,27 +32,33 @@ All of these features are on by default but can be disabled with flags.
 * Randomly shuffles the order of test items. This is done first at the level of
   modules, then at the level of test classes (if you have them), then at the
   order of functions. This also works with things like doctests.
-* Resets ``random.seed()`` at the start of every test case and test to a fixed
-  number - this defaults to ``time.time()`` from the start of your test run,
-  but you can pass in ``--randomly-seed`` to repeat a randomness-induced
-  failure.
+
+* Resets the global ``random.seed()`` at the start of every test case and test
+  to a fixed number - this defaults to ``time.time()`` from the start of your
+  test run, but you can pass in ``--randomly-seed`` to repeat a
+  randomness-induced failure.
+
 * If
   `factory boy <https://factoryboy.readthedocs.io/en/latest/reference.html>`_
   is installed, its random state is reset at the start of every test. This
   allows for repeatable use of its random 'fuzzy' features.
+
 * If `faker <https://pypi.org/project/faker>`_ is installed, its random
   state is reset at the start of every test. This is also for repeatable fuzzy
   data in tests - factory boy uses faker for lots of data. This is also done
   if you're using the ``faker`` pytest fixture, by defining the ``faker_seed``
   fixture
   (`docs <https://faker.readthedocs.io/en/master/pytest-fixtures.html#seeding-configuration>`__).
-* If `numpy <http://www.numpy.org/>`_ is installed, its random state is reset
-  at the start of every test.
+
+* If `numpy <http://www.numpy.org/>`_ is installed, its global random state is
+  reset at the start of every test.
+
 * If additional random generators are used, they can be registered under the
   ``pytest_randomly.random_seeder``
   `entry point <https://packaging.python.org/specifications/entry-points/>`_ and
   will have their seed reset at the start of every test. Register a function
   that takes the current seed value.
+
 * Works with `pytest-xdist <https://pypi.org/project/pytest-xdist/>`__.
 
 About
@@ -85,18 +94,18 @@ pytest-randomly <https://testandcode.com/128>`__.
 Installation
 ============
 
-Install from pip with:
+Install with:
 
 .. code-block:: bash
 
     python -m pip install pytest-randomly
 
-Python 3.6 to 3.10 supported.
+Python 3.7 to 3.10 supported.
 
 ----
 
 **Testing a Django project?**
-Check out my book `Speed Up Your Django Tests <https://gumroad.com/l/suydt>`__ which covers loads of best practices so you can write faster, more accurate tests.
+Check out my book `Speed Up Your Django Tests <https://adamchainz.gumroad.com/l/suydt>`__ which covers loads of ways to write faster, more accurate tests.
 
 ----
 
@@ -111,7 +120,7 @@ being used:
 
     $ pytest
     ...
-    platform darwin -- Python 3.7.2, pytest-4.3.1, py-1.8.0, pluggy-0.9.0
+    platform darwin -- Python ...
     Using --randomly-seed=1553614239
     ...
 
@@ -127,6 +136,8 @@ Or more conveniently, use the special value ``last``:
 .. code-block:: bash
 
     pytest --randomly-seed=last
+
+(This only works if pytest’s cacheprovider plugin has not been disabled.)
 
 Since the ordering is by module, then by class, you can debug inter-test
 pollution failures by narrowing down which tests are being run to find the bad

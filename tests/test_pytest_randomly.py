@@ -1,13 +1,10 @@
-from unittest.mock import Mock
+from __future__ import annotations
+
+from unittest import mock
 
 import pytest
 
 import pytest_randomly
-
-try:
-    import numpy
-except ImportError:
-    numpy = None
 
 pytest_plugins = ["pytester"]
 
@@ -29,7 +26,7 @@ def ourtestdir(testdir):
     #   File ".../site-packages/numpy/core/overrides.py", line 204, in decorator
     # add_docstring(implementation, dispatcher.__doc__)
     # RuntimeError: empty_like method already has a docstring
-    testdir._runpytest_method = testdir.runpytest_subprocess
+    # testdir._runpytest_method = testdir.runpytest_subprocess
 
     yield testdir
 
@@ -78,6 +75,17 @@ def test_it_reuses_the_same_random_seed_per_test(ourtestdir):
     )
     out = ourtestdir.runpytest("--randomly-dont-reorganize")
     out.assert_outcomes(passed=2, failed=0)
+
+
+def test_without_cacheprovider(ourtestdir):
+    ourtestdir.makepyfile(
+        test_one="""
+        def test_a():
+            pass
+        """
+    )
+    out = ourtestdir.runpytest("-p", "no:cacheprovider")
+    out.assert_outcomes(passed=1, failed=0)
 
 
 def test_using_last_seed(ourtestdir):
@@ -239,10 +247,10 @@ def test_files_reordered(ourtestdir):
 
     out.assert_outcomes(passed=4, failed=0)
     assert out.outlines[8:12] == [
+        "test_b.py::test_it PASSED",
+        "test_a.py::test_it PASSED",
         "test_d.py::test_it PASSED",
         "test_c.py::test_it PASSED",
-        "test_a.py::test_it PASSED",
-        "test_b.py::test_it PASSED",
     ]
 
 
@@ -259,10 +267,10 @@ def test_files_reordered_when_seed_not_reset(ourtestdir):
 
     out.assert_outcomes(passed=4, failed=0)
     assert out.outlines[8:12] == [
+        "test_b.py::test_it PASSED",
+        "test_a.py::test_it PASSED",
         "test_d.py::test_it PASSED",
         "test_c.py::test_it PASSED",
-        "test_a.py::test_it PASSED",
-        "test_b.py::test_it PASSED",
     ]
 
 
@@ -299,9 +307,9 @@ def test_classes_reordered(ourtestdir):
     out.assert_outcomes(passed=4, failed=0)
     assert out.outlines[8:12] == [
         "test_one.py::D::test_d PASSED",
+        "test_one.py::B::test_b PASSED",
         "test_one.py::C::test_c PASSED",
         "test_one.py::A::test_a PASSED",
-        "test_one.py::B::test_b PASSED",
     ]
 
 
@@ -330,10 +338,10 @@ def test_class_test_methods_reordered(ourtestdir):
 
     out.assert_outcomes(passed=4, failed=0)
     assert out.outlines[8:12] == [
-        "test_one.py::T::test_d PASSED",
         "test_one.py::T::test_c PASSED",
-        "test_one.py::T::test_a PASSED",
         "test_one.py::T::test_b PASSED",
+        "test_one.py::T::test_a PASSED",
+        "test_one.py::T::test_d PASSED",
     ]
 
 
@@ -359,10 +367,10 @@ def test_test_functions_reordered(ourtestdir):
 
     out.assert_outcomes(passed=4, failed=0)
     assert out.outlines[8:12] == [
-        "test_one.py::test_d PASSED",
         "test_one.py::test_c PASSED",
         "test_one.py::test_a PASSED",
         "test_one.py::test_b PASSED",
+        "test_one.py::test_d PASSED",
     ]
 
 
@@ -393,10 +401,10 @@ def test_test_functions_reordered_when_randomness_in_module(ourtestdir):
 
     out.assert_outcomes(passed=4, failed=0)
     assert out.outlines[8:12] == [
-        "test_one.py::test_d PASSED",
         "test_one.py::test_c PASSED",
         "test_one.py::test_a PASSED",
         "test_one.py::test_b PASSED",
+        "test_one.py::test_d PASSED",
     ]
 
 
@@ -418,7 +426,7 @@ def test_doctests_reordered(ourtestdir):
             return 9002
         """
     )
-    args = ["-v", "--doctest-modules", "--randomly-seed=5"]
+    args = ["-v", "--doctest-modules", "--randomly-seed=1"]
 
     out = ourtestdir.runpytest(*args)
     out.assert_outcomes(passed=2)
@@ -431,6 +439,8 @@ def test_doctests_reordered(ourtestdir):
 def test_it_works_with_the_simplest_test_items(ourtestdir):
     ourtestdir.makepyfile(
         conftest="""
+        import sys
+
         import pytest
 
 
@@ -462,7 +472,13 @@ def test_it_works_with_the_simplest_test_items(ourtestdir):
                 items=[
                     NoOpItem.from_parent(
                         name=str(path) + "1",
-                        parent=parent, module="foo"
+                        parent=parent,
+                        module=sys.modules[__name__],
+                    ),
+                    NoOpItem.from_parent(
+                        name=str(path) + "1",
+                        parent=parent,
+                        module=sys.modules[__name__],
                     ),
                     NoOpItem.from_parent(
                         name=str(path) + "2",
@@ -475,7 +491,7 @@ def test_it_works_with_the_simplest_test_items(ourtestdir):
     args = ["-v"]
 
     out = ourtestdir.runpytest(*args)
-    out.assert_outcomes(passed=2)
+    out.assert_outcomes(passed=3)
 
 
 def test_doctests_in_txt_files_reordered(ourtestdir):
@@ -491,7 +507,7 @@ def test_doctests_in_txt_files_reordered(ourtestdir):
         0
         """
     )
-    args = ["-v", "--randomly-seed=1"]
+    args = ["-v", "--randomly-seed=2"]
 
     out = ourtestdir.runpytest(*args)
     out.assert_outcomes(passed=2)
@@ -499,6 +515,38 @@ def test_doctests_in_txt_files_reordered(ourtestdir):
         "test2.txt::test2.txt PASSED",
         "test.txt::test.txt PASSED",
     ]
+
+
+def test_it_runs_before_stepwise(ourtestdir):
+    ourtestdir.makepyfile(
+        test_one="""
+        def test_a():
+            assert 0
+
+
+        def test_b():
+            assert 0
+        """
+    )
+    out = ourtestdir.runpytest("-v", "--randomly-seed=1", "--stepwise")
+    out.assert_outcomes(failed=1)
+
+    # Now make test_b pass
+    ourtestdir.makepyfile(
+        test_one="""
+        def test_a():
+            assert 0
+
+
+        def test_b():
+            assert 1
+        """
+    )
+    ourtestdir.tmpdir.join("__pycache__").remove()
+    out = ourtestdir.runpytest("-v", "--randomly-seed=1", "--stepwise")
+    out.assert_outcomes(passed=1, failed=1)
+    out = ourtestdir.runpytest("-v", "--randomly-seed=1", "--stepwise")
+    out.assert_outcomes(failed=1)
 
 
 def test_fixtures_get_different_random_state_to_tests(ourtestdir):
@@ -619,7 +667,6 @@ def test_faker_fixture(ourtestdir):
     out.assert_outcomes(passed=2)
 
 
-@pytest.mark.skipif(numpy is None, reason="numpy not installed")
 def test_numpy(ourtestdir):
     ourtestdir.makepyfile(
         test_one="""
@@ -637,7 +684,6 @@ def test_numpy(ourtestdir):
     out.assert_outcomes(passed=2)
 
 
-@pytest.mark.skipif(numpy is None, reason="numpy not installed")
 def test_numpy_doesnt_crash_with_large_seed(ourtestdir):
     ourtestdir.makepyfile(
         test_one="""
@@ -666,8 +712,9 @@ def test_failing_import(testdir):
         modcol.obj
 
 
-def test_entrypoint_injection(testdir, monkeypatch):
+def test_entrypoint_injection(pytester, monkeypatch):
     """Test that registered entry points are seeded"""
+    (pytester.path / "test_one.py").write_text("def test_one(): pass\n")
 
     class _FakeEntryPoint:
         """Minimal surface of Entry point API to allow testing"""
@@ -679,34 +726,51 @@ def test_entrypoint_injection(testdir, monkeypatch):
         def load(self):
             return self._obj
 
-    entry_points = []
+    entry_points: list[_FakeEntryPoint] = []
 
     def fake_entry_points(*, group):
         return entry_points
 
     monkeypatch.setattr(pytest_randomly, "entry_points", fake_entry_points)
-    reseed = Mock()
+    reseed = mock.Mock()
     entry_points.append(_FakeEntryPoint("test_seeder", reseed))
 
     # Need to run in-process so that monkeypatching works
-    testdir.runpytest("--randomly-seed=1")
-    assert reseed.call_args == ((1,),)
-    testdir.runpytest("--randomly-seed=424242")
-    assert reseed.call_args == ((424242,),)
+    pytester.runpytest_inprocess("--randomly-seed=1")
+    assert reseed.mock_calls == [
+        mock.call(1),
+        mock.call(1),
+        mock.call(0),
+        mock.call(1),
+        mock.call(2),
+    ]
+
+    reseed.mock_calls[:] = []
+    pytester.runpytest_inprocess("--randomly-seed=424242")
+    assert reseed.mock_calls == [
+        mock.call(424242),
+        mock.call(424242),
+        mock.call(424241),
+        mock.call(424242),
+        mock.call(424243),
+    ]
 
 
-def test_entrypoint_missing(testdir, monkeypatch):
+def test_entrypoint_missing(pytester, monkeypatch):
     """
     Test that if there aren't any registered entrypoints, it doesn't crash
     """
+    (pytester.path / "test_one.py").write_text("def test_one(): pass\n")
 
-    def fake_entry_points():
-        return {}
+    def fake_entry_points(group):
+        return []
 
     monkeypatch.setattr(pytest_randomly, "entry_points", fake_entry_points)
 
     # Need to run in-process so that monkeypatching works
-    testdir.runpytest("--randomly-seed=1")
+    result = pytester.runpytest_inprocess("--randomly-seed=1")
+
+    assert result.ret == 0
 
 
 def test_works_without_xdist(simpletestdir):

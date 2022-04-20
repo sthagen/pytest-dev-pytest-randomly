@@ -2,6 +2,61 @@
 History
 =======
 
+3.11.0 (2022-01-10)
+-------------------
+
+* Drop Python 3.6 support.
+
+3.10.3 (2021-11-30)
+-------------------
+
+* Work on FIPS Python 3.9+, by declaring use of ``hashlib.md5()`` as not used for security.
+
+  Thanks to dantebben for the report in `Issue #414 <https://github.com/pytest-dev/pytest-randomly/issues/414>`__.
+
+3.10.2 (2021-11-10)
+-------------------
+
+* Fix crash when pytest’s cacheprovider is disabled.
+
+  Thanks to Mandeep Sandhu for the report in `Issue #408
+  <https://github.com/pytest-dev/pytest-randomly/issues/408>`__.
+
+* Improve group name in ``pytest --help``.
+
+3.10.1 (2021-08-13)
+-------------------
+
+* Fix new shuffling to work when one or more test in a class or module have the
+  same test id.
+
+  Thanks to Nikita Sobolev for the report in `Issue #378
+  <https://github.com/pytest-dev/pytest-randomly/issues/378>`__.
+
+3.10.0 (2021-08-13)
+-------------------
+
+* Rework shuffling algorithm to use hashing. This means that running a subset
+  of tests with the same seed will now produce the same ordering as running the
+  full set of tests. This allows narrowing down ordering-related failures.
+
+  Thanks to Tom Grainger for the suggestion in `Issue #210
+  <https://github.com/pytest-dev/pytest-randomly/issues/210>`__.
+
+* Shuffle before other test collection hooks. This allows
+  pytest’s `--stepwise flag
+  <https://docs.pytest.org/en/latest/cache.html#stepwise>`__ to work, among
+  other things.
+
+  Thanks to Tom Grainger for the suggestion to try with ``--stepwise``. Fixes
+  `Issue #376
+  <https://github.com/pytest-dev/pytest-randomly/issues/376>`__.
+
+3.9.0 (2021-08-12)
+------------------
+
+* Add type hints.
+
 3.8.0 (2021-05-10)
 ------------------
 
@@ -19,7 +74,7 @@ History
 * Fix deprecation warning from importlib-metadata 3.9.0+.
 
   Thanks to Dominic Davis-Foster for report in `Issue #333
-  <https://github.com/pytest-dev/pytest-randomly/issue/333>`__.
+  <https://github.com/pytest-dev/pytest-randomly/issues/333>`__.
 
 * Stop distributing tests to reduce package size. Tests are not intended to be
   run outside of the tox setup in the repository. Repackagers can use GitHub's
