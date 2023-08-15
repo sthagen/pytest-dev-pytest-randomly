@@ -2,6 +2,11 @@
 Changelog
 =========
 
+3.14.0 (2023-08-15)
+-------------------
+
+* Reset the random state for `Model Bakery <https://model-bakery.readthedocs.io/en/latest/>`__.
+
 3.13.0 (2023-07-10)
 -------------------
 
