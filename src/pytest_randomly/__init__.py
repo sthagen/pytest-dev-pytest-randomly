@@ -4,12 +4,15 @@ import argparse
 import hashlib
 import random
 import sys
+from functools import lru_cache
 from itertools import groupby
 from types import ModuleType
 from typing import Any, Callable, TypeVar
+from zlib import crc32
 
 from _pytest.config import Config
 from _pytest.config.argparsing import Parser
+from _pytest.fixtures import SubRequest
 from _pytest.nodes import Item
 from pytest import Collector, fixture, hookimpl
 
@@ -57,7 +60,8 @@ except ImportError:  # pragma: no cover
     have_numpy = False
 
 
-default_seed = random.Random().getrandbits(32)
+def make_seed() -> int:
+    return random.Random().getrandbits(32)
 
 
 def seed_type(string: str) -> str | int:
@@ -112,13 +116,13 @@ def pytest_configure(config: Config) -> None:
             "The cacheprovider plugin is required to use 'last'"
         )
         assert config.cache is not None
-        seed = config.cache.get("randomly_seed", default_seed)
+        seed = config.cache.get("randomly_seed", make_seed())
     elif seed_value == "default":
         if hasattr(config, "workerinput"):  # pragma: no cover
             # pytest-xdist: use seed generated on main.
             seed = config.workerinput["randomly_seed"]
         else:
-            seed = default_seed
+            seed = make_seed()
     else:
         seed = seed_value
     if hasattr(config, "cache"):
@@ -195,17 +199,17 @@ def pytest_report_header(config: Config) -> str:
 
 def pytest_runtest_setup(item: Item) -> None:
     if item.config.getoption("randomly_reset_seed"):
-        _reseed(item.config, -1)
+        _reseed(item.config, _crc32(item.nodeid) - 1)
 
 
 def pytest_runtest_call(item: Item) -> None:
     if item.config.getoption("randomly_reset_seed"):
-        _reseed(item.config)
+        _reseed(item.config, _crc32(item.nodeid))
 
 
 def pytest_runtest_teardown(item: Item) -> None:
     if item.config.getoption("randomly_reset_seed"):
-        _reseed(item.config, 1)
+        _reseed(item.config, _crc32(item.nodeid) + 1)
 
 
 @hookimpl(tryfirst=True)
@@ -224,11 +228,11 @@ def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
             )
         )
 
-    def _module_key(module_item: tuple[ModuleType | None, list[Item]]) -> bytes:
+    def _module_key(module_item: tuple[ModuleType | None, list[Item]]) -> int:
         module, _items = module_item
         if module is None:
-            return _md5(f"{seed}::None")
-        return _md5(f"{seed}::{module.__name__}")
+            return _crc32(f"{seed}::None")
+        return _crc32(f"{seed}::{module.__name__}")
 
     modules_items.sort(key=_module_key)
 
@@ -245,19 +249,19 @@ def _get_module(item: Item) -> ModuleType | None:
 def _shuffle_by_class(items: list[Item], seed: int) -> list[Item]:
     klasses_items: list[tuple[type[Any] | None, list[Item]]] = []
 
-    def _item_key(item: Item) -> bytes:
-        return _md5(f"{seed}::{item.nodeid}")
+    def _item_key(item: Item) -> int:
+        return _crc32(f"{seed}::{item.nodeid}")
 
     for klass, group in groupby(items, _get_cls):
         klass_items = list(group)
         klass_items.sort(key=_item_key)
         klasses_items.append((klass, klass_items))
 
-    def _cls_key(klass_items: tuple[type[Any] | None, list[Item]]) -> bytes:
+    def _cls_key(klass_items: tuple[type[Any] | None, list[Item]]) -> int:
         klass, items = klass_items
         if klass is None:
-            return _md5(f"{seed}::None")
-        return _md5(f"{seed}::{klass.__module__}.{klass.__qualname__}")
+            return _crc32(f"{seed}::None")
+        return _crc32(f"{seed}::{klass.__module__}.{klass.__qualname__}")
 
     klasses_items.sort(key=_cls_key)
 
@@ -278,15 +282,16 @@ def reduce_list_of_lists(lists: list[list[T]]) -> list[T]:
     return new_list
 
 
-def _md5(string: str) -> bytes:
-    hasher = hashlib.md5(usedforsecurity=False)
-    hasher.update(string.encode())
-    return hasher.digest()
+@lru_cache
+def _crc32(string: str) -> int:
+    return crc32(string.encode())
 
 
 if have_faker:  # pragma: no branch
 
     @fixture(autouse=True)
-    def faker_seed(pytestconfig: Config) -> int:
-        result: int = pytestconfig.getoption("randomly_seed")
+    def faker_seed(pytestconfig: Config, request: SubRequest) -> int:
+        result: int = pytestconfig.getoption("randomly_seed") + _crc32(
+            request.node.nodeid
+        )
         return result
