@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "pytest-randomly"
-version = "4.0.1"
+version = "4.1.0"
 description = "Pytest plugin to randomly order tests and control random.seed."
 readme = "README.rst"
 keywords = [
@@ -50,7 +50,7 @@ test = [
   "faker",
   "model-bakery>=1.13",
   "numpy",
-  "pytest",
+  "pytest>=9",
   "pytest-xdist",
 ]
 
@@ -107,11 +107,7 @@ warn_unreachable = true
 overrides = [ { module = "tests.*", allow_untyped_defs = true } ]
 
 [tool.pytest]
-ini_options.addopts = """\
-    --strict-config
-    --strict-markers
-    """
-ini_options.xfail_strict = true
+strict = true
 
 [tool.coverage]
 run.branch = true
