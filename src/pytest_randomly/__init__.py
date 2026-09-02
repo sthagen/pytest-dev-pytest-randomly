@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import random
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from functools import lru_cache
 from importlib.metadata import entry_points
 from itertools import groupby
@@ -53,6 +53,21 @@ try:
     have_numpy = True
 except ImportError:  # pragma: no cover
     have_numpy = False
+
+# polyfactory
+try:
+    from polyfactory.constants import DEFAULT_RANDOM as polyfactory_random
+
+    have_polyfactory = True
+except ImportError:  # pragma: no cover
+    # old versions
+    try:
+        from polyfactory.factories.base import BaseFactory
+
+        polyfactory_random = BaseFactory.__random__
+        have_polyfactory = True
+    except ImportError:
+        have_polyfactory = False
 
 
 def make_seed() -> int:
@@ -157,6 +172,9 @@ def _reseed(config: Config, offset: int = 0) -> int:
     if have_numpy:  # pragma: no branch
         np_random.seed(seed % 2**32)
 
+    if have_polyfactory:  # pragma: no branch
+        polyfactory_random.setstate(random_state)
+
     if entrypoint_reseeds is None:
         eps = entry_points(group="pytest_randomly.random_seeder")
         entrypoint_reseeds = [e.load() for e in eps]
@@ -187,11 +205,21 @@ def pytest_runtest_teardown(item: Item) -> None:
         _reseed(item.config, (_crc32(item.nodeid) + 1) % 2**32)
 
 
-@hookimpl(tryfirst=True)
-def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
-    if not config.getoption("randomly_reorganize"):
-        return
+@hookimpl(wrapper=True, tryfirst=True)
+def pytest_collection_modifyitems(
+    config: Config, items: list[Item]
+) -> Generator[None, None, None]:
+    # Reorganize within this wrapper, before the yield, so it runs before all
+    # non-wrapper implementations of this hook, regardless of plugin
+    # registration order. Plugins that group tests with a stable sort, like
+    # pytest-django, then apply their grouping on top of the shuffled order,
+    # making the final order reproducible from the seed.
+    if config.getoption("randomly_reorganize"):
+        _reorganize_items(config, items)
+    return (yield)
 
+
+def _reorganize_items(config: Config, items: list[Item]) -> None:
     seed = _reseed(config)
 
     modules_items: list[tuple[ModuleType | None, list[Item]]] = []

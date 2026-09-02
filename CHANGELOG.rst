@@ -2,6 +2,33 @@
 Changelog
 =========
 
+5.0.0 (2026-09-01)
+------------------
+
+* Support Python 3.15.
+
+* Shuffle tests in a wrapper around the ``pytest_collection_modifyitems`` hook, guaranteeing that the shuffle runs before all other plugins’ implementations of the hook.
+
+  Previously, pytest-randomly shuffled in a plain ``tryfirst`` hook implementation.
+  When another plugin also implemented the hook with ``tryfirst``, as pytest-django does, whichever plugin pytest happened to register later ran first.
+  Registration order comes from package metadata on disk, which can differ between seemingly identical environments — even two containers built from the same ``Dockerfile``, or the same virtual environment after reinstalling a package.
+  As a result, the same seed could yield different test orders in different environments.
+  Worse, in environments where pytest-randomly ended up shuffling last, it silently destroyed the other plugin’s ordering — for pytest-django, the grouping of database tests that mirrors Django’s test runner (non-transactional database tests, then transactional ones, then the rest).
+
+  Now the shuffle always runs first, and plugins that group tests with a stable sort apply their grouping on top of the shuffled order, so the final order is reproducible from the seed alone.
+  In environments that previously hit the reversed hook order, upgrading changes the test order for a given seed — restoring both reproducibility and other plugins’ grouping.
+
+  `PR #746 <https://github.com/pytest-dev/pytest-randomly/pull/746>`__.
+  Thanks to milssky for the report in `Issue #701 <https://github.com/pytest-dev/pytest-randomly/issues/701>`__.
+
+* Require pytest 8+, the first version to require a version of pluggy that supports hook wrappers, as used by the above fix.
+
+  `PR #746 <https://github.com/pytest-dev/pytest-randomly/pull/746>`__.
+
+* Reset `Polyfactory <https://polyfactory.litestar.dev/>`__\’s default random state at the start of every test, if it is installed.
+
+  Thanks to Rahul Kumar in `PR #735 <https://github.com/pytest-dev/pytest-randomly/issues/735>`__.
+
 * Switch package build backend from setuptools to `uv_build <https://docs.astral.sh/uv/concepts/build-backend/>`__.
   This makes builds with uv about nine times faster, since uv runs the backend natively, without creating a build environment or spawning a Python process.
   Additionally, source distributions no longer include test files, which setuptools previously included incompletely, missing the files needed to actually run them.

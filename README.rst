@@ -64,6 +64,11 @@ All of these features are on by default but can be disabled with flags.
 
     Only its `legacy random state <https://numpy.org/doc/stable/reference/random/legacy.html>`__ is affected.
 
+  * `Polyfactory <https://polyfactory.litestar.dev/>`__
+
+    Only the default random generator is affected.
+    Factories that have called ``seed_random()`` with their own seed are unaffected.
+
 * If additional random generators are used, they can be registered under the
   ``pytest_randomly.random_seeder``
   `entry point <https://packaging.python.org/specifications/entry-points/>`_ and
@@ -100,7 +105,7 @@ including how it started life as the nose plugin
 `nose-randomly <https://github.com/adamchainz/nose-randomly>`__.
 
 Additionally, I appeared on the Test and Code podcast to `talk about
-pytest-randomly <https://testandcode.com/128>`__.
+pytest-randomly <https://pythontest.com/testandcode/episodes/128-pytest-randomly-adam-johnson/>`__.
 
 Installation
 ============
@@ -111,7 +116,7 @@ Install with:
 
     python -m pip install pytest-randomly
 
-Python 3.10 to 3.14 supported.
+Python 3.10 to 3.15 supported.
 
 Usage
 =====
